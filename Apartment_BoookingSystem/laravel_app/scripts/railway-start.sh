@@ -13,6 +13,26 @@ fi
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 RUN_SEEDER="${RUN_SEEDER:-false}"
 
+# If using PostgreSQL, wait for the DB host/port to be reachable before running
+# any Artisan commands that may touch the database (cache clearing, migrations).
+if [[ "${DB_CONNECTION:-}" == "pgsql" ]]; then
+  DB_HOST="${DB_HOST:-127.0.0.1}"
+  DB_PORT="${DB_PORT:-5432}"
+  WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-60}"
+  echo "DB_CONNECTION=pgsql detected; waiting up to ${WAIT_TIMEOUT}s for ${DB_HOST}:${DB_PORT}..."
+  for i in $(seq 1 "${WAIT_TIMEOUT}"); do
+    if (echo > /dev/tcp/${DB_HOST}/${DB_PORT}) >/dev/null 2>&1; then
+      echo "Postgres is reachable at ${DB_HOST}:${DB_PORT} (after ${i}s)"
+      DB_READY=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ -z "${DB_READY:-}" ]]; then
+    echo "Timed out waiting for Postgres at ${DB_HOST}:${DB_PORT} after ${WAIT_TIMEOUT}s"
+  fi
+fi
+
 # Clear stale cache artifacts before warmup.
 php artisan optimize:clear
 
