@@ -10,7 +10,16 @@ Route::get('/up', function () {
     return response('OK', 200);
 });
 
-Route::get('/', [ApartmentController::class, 'index'])->name('home');
+// When deployed on Railway, return a lightweight 200 at `/` so external
+// health probes that hit `/` succeed quickly. On local/dev environments
+// the regular controller will render the apartments index.
+if (env('RAILWAY_ENVIRONMENT_NAME')) {
+    Route::get('/', function () {
+        return response('OK', 200);
+    })->name('home');
+} else {
+    Route::get('/', [ApartmentController::class, 'index'])->name('home');
+}
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
 Route::get('/apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
 
