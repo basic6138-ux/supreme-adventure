@@ -5,6 +5,11 @@ use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AdminController;
 
+// Lightweight health endpoint used by deploy healthchecks
+Route::get('/up', function () {
+    return response('OK', 200);
+});
+
 Route::get('/', [ApartmentController::class, 'index'])->name('home');
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
 Route::get('/apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
