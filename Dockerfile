@@ -6,6 +6,7 @@ RUN apt-get update \
         git \
         unzip \
         libzip-dev \
+        libpq-dev \
         libpng-dev \
         libonig-dev \
         libxml2-dev \
@@ -14,6 +15,9 @@ RUN apt-get update \
         ca-certificates \
         build-essential \
     && docker-php-ext-install pdo pdo_sqlite mbstring zip bcmath pcntl
+
+# Install PostgreSQL PDO driver so `pgsql` DB_CONNECTION works in production
+RUN docker-php-ext-install pdo_pgsql pgsql || true
 
 # Install Composer (copy from official composer image)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
