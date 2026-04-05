@@ -33,6 +33,21 @@ if [[ "${DB_CONNECTION:-}" == "pgsql" ]]; then
   fi
 fi
 
+# Start a minimal HTTP server that immediately responds 200 at `/` so the
+# platform healthcheck can succeed while we run migrations/build steps.
+# We'll remove it before launching the real Laravel server.
+TEMP_HEALTH_DIR="$(pwd)/.railway-health"
+mkdir -p "${TEMP_HEALTH_DIR}"
+echo "OK" > "${TEMP_HEALTH_DIR}/index.html"
+
+if command -v python3 >/dev/null 2>&1; then
+  echo "Starting temporary python health server on port ${PORT:-8080}"
+  python3 -m http.server "${PORT:-8080}" --bind 0.0.0.0 --directory "${TEMP_HEALTH_DIR}" >/dev/null 2>&1 &
+  TEMP_HEALTH_PID=$!
+else
+  echo "python3 not available — skipping temporary health server"
+fi
+
 # Clear stale cache artifacts before warmup.
 php artisan optimize:clear
 

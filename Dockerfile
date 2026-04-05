@@ -13,6 +13,7 @@ RUN apt-get update \
         libsqlite3-dev \
         curl \
         ca-certificates \
+        python3 \
         build-essential \
     && docker-php-ext-install pdo pdo_sqlite mbstring zip bcmath pcntl
 
