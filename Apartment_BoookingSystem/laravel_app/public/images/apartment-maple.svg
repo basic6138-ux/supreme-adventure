@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-label="Maple Hall Flat A">
+  <rect width="1200" height="700" fill="#fef3c7"/>
+  <rect x="100" y="170" width="1000" height="400" rx="12" fill="#ffffff"/>
+  <rect x="170" y="240" width="200" height="160" fill="#f59e0b"/>
+  <rect x="420" y="240" width="200" height="160" fill="#fbbf24"/>
+  <rect x="670" y="240" width="200" height="160" fill="#fcd34d"/>
+  <text x="600" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" fill="#92400e">Maple Hall Flat A</text>
+</svg>

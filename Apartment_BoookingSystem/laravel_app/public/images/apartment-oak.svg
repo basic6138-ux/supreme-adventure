@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-label="Oak Residence 3B">
+  <rect width="1200" height="700" fill="#dcfce7"/>
+  <rect x="90" y="160" width="1020" height="420" rx="12" fill="#ffffff"/>
+  <rect x="180" y="230" width="240" height="180" fill="#22c55e"/>
+  <rect x="480" y="230" width="240" height="180" fill="#16a34a"/>
+  <rect x="780" y="230" width="240" height="180" fill="#15803d"/>
+  <text x="600" y="515" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" fill="#14532d">Oak Residence 3B</text>
+</svg>

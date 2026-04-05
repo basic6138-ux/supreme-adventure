@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-label="Pine Studio">
+  <rect width="1200" height="700" fill="#e0e7ff"/>
+  <rect x="110" y="165" width="980" height="410" rx="12" fill="#ffffff"/>
+  <rect x="220" y="235" width="220" height="170" fill="#6366f1"/>
+  <rect x="490" y="235" width="220" height="170" fill="#4f46e5"/>
+  <rect x="760" y="235" width="220" height="170" fill="#4338ca"/>
+  <text x="600" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" fill="#312e81">Pine Studio</text>
+</svg>
