@@ -35,7 +35,7 @@ RUN npm ci --silent && npm run build --silent || true
 # Ensure start script is executable
 RUN chmod +x /app/scripts/railway-start.sh || true
 
-EXPOSE 8000
+EXPOSE 8080
 
 # Use the existing railway start script which runs migrations and starts the server
 CMD ["/bin/bash", "/app/scripts/railway-start.sh"]

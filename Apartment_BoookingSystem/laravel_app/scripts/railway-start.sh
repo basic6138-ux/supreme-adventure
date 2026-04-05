@@ -31,4 +31,31 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
+# Use the platform-provided PORT when available (Railway sets $PORT at runtime).
+PORT="${PORT:-8080}"
+
+echo "Starting Laravel dev server on port ${PORT}"
+
+# Start the server in the background so we can poll the /up health endpoint.
+php artisan serve --host=0.0.0.0 --port="${PORT}" &
+SERVER_PID=$!
+
+# Wait for the app to respond on /up (timeout defaults to 120s, configurable via HEALTHCHECK_TIMEOUT)
+HEALTHCHECK_TIMEOUT="${HEALTHCHECK_TIMEOUT:-120}"
+echo "Waiting up to ${HEALTHCHECK_TIMEOUT}s for /up to return 200..."
+for i in $(seq 1 "${HEALTHCHECK_TIMEOUT}"); do
+  if curl -sSf "http://127.0.0.1:${PORT}/up" >/dev/null 2>&1; then
+    echo "Healthcheck succeeded after ${i}s"
+    break
+  fi
+  sleep 1
+done
+
+if ! kill -0 "${SERVER_PID}" >/dev/null 2>&1; then
+  echo "Server process exited unexpectedly. Showing last 200 lines of storage/logs/laravel.log:"
+  tail -n 200 storage/logs/laravel.log || true
+  exit 1
+fi
+
+# Wait on the server process so the container keeps running with the server in foreground.
+wait "${SERVER_PID}"
