@@ -1,0 +1,6 @@
+Apartment_BoookingSystem/vendor/
+Apartment_BoookingSystem/node_modules/
+Apartment_BoookingSystem/laravel_app/node_modules/
+Apartment_BoookingSystem/laravel_app/public/build/
+*.log
+/.git
