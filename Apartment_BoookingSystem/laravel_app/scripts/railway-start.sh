@@ -71,7 +71,16 @@ PORT="${PORT:-8080}"
 
 echo "Starting Laravel dev server on port ${PORT}"
 
-# Start the server in the background so we can poll the /up health endpoint.
+## Before starting the real server, stop the temporary health server (if running)
+if [[ -n "${TEMP_HEALTH_PID:-}" ]]; then
+  echo "Stopping temporary health server (pid=${TEMP_HEALTH_PID}) to free port ${PORT}"
+  kill "${TEMP_HEALTH_PID}" >/dev/null 2>&1 || true
+  wait "${TEMP_HEALTH_PID}" 2>/dev/null || true
+  unset TEMP_HEALTH_PID
+  sleep 1
+fi
+
+# Start the real Laravel server in the background so we can poll the /up health endpoint.
 php artisan serve --host=0.0.0.0 --port="${PORT}" &
 SERVER_PID=$!
 
