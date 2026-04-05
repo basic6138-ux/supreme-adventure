@@ -40,9 +40,12 @@ TEMP_HEALTH_DIR="$(pwd)/.railway-health"
 mkdir -p "${TEMP_HEALTH_DIR}"
 echo "OK" > "${TEMP_HEALTH_DIR}/index.html"
 
+# Use the platform-provided PORT when available (Railway sets $PORT at runtime).
+PORT="${PORT:-8080}"
+
 if command -v python3 >/dev/null 2>&1; then
-  echo "Starting temporary python health server on port ${PORT:-8080}"
-  python3 -m http.server "${PORT:-8080}" --bind 0.0.0.0 --directory "${TEMP_HEALTH_DIR}" >/dev/null 2>&1 &
+  echo "Starting temporary python health server on port ${PORT}"
+  python3 -m http.server "${PORT}" --bind 0.0.0.0 --directory "${TEMP_HEALTH_DIR}" >/dev/null 2>&1 &
   TEMP_HEALTH_PID=$!
 else
   echo "python3 not available — skipping temporary health server"
