@@ -67,6 +67,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 });
 
 // Include auth routes provided by Breeze or other auth scaffolding
-if (file_exists(__DIR__.'/auth.php')) {
-    require __DIR__.'/auth.php';
-}
+// TEMPORARILY DISABLED FOR DEBUGGING
+// if (file_exists(__DIR__.'/auth.php')) {
+//     require __DIR__.'/auth.php';
+// }
