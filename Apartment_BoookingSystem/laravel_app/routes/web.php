@@ -10,6 +10,11 @@ Route::get('/up', function () {
     return response('OK', 200);
 });
 
+// Diagnostic endpoint - no database
+Route::get('/health', function () {
+    return "APP is running. PHP Version: " . phpversion() . ", Time: " . date('Y-m-d H:i:s');
+});
+
 // Simple test - just return text, no views
 Route::get('/', function () {
     try {
