@@ -14,7 +14,7 @@ Route::get('/up', function () {
 Route::get('/api/debug/apartments', function () {
     try {
         $count = \App\Models\Apartment::count();
-        $apartments = \App\Models\Apartment::limit(5)->get();
+        $apartments = \App\Models\Apartment::where('status', 'available')->limit(3)->get(['id', 'name', 'location', 'price_per_month']);
         return response()->json([
             'status' => 'ok',
             'total_count' => $count,
@@ -24,8 +24,18 @@ Route::get('/api/debug/apartments', function () {
         return response()->json([
             'status' => 'error',
             'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Debug mode disabled',
         ], 500);
+    }
+});
+
+// Simple test endpoint
+Route::get('/test', function () {
+    try {
+        $apartments = \App\Models\Apartment::count();
+        return "Apartments in DB: $apartments - OK";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
     }
 });
 
