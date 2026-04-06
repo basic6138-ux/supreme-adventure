@@ -10,37 +10,15 @@ Route::get('/up', function () {
     return response('OK', 200);
 });
 
-// Debug endpoint to check database connection
-Route::get('/api/debug/apartments', function () {
+// Simple test - just return text, no views
+Route::get('/', function () {
     try {
         $count = \App\Models\Apartment::count();
-        $apartments = \App\Models\Apartment::where('status', 'available')->limit(3)->get(['id', 'name', 'location', 'price_per_month']);
-        return response()->json([
-            'status' => 'ok',
-            'total_count' => $count,
-            'sample_apartments' => $apartments,
-        ]);
+        return "Welcome to Apartment Booking System! We have $count apartments available.";
     } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Debug mode disabled',
-        ], 500);
+        return "Error: " . $e->getMessage() . "\n\nFull trace:\n" . $e->getTraceAsString();
     }
 });
-
-// Simple test endpoint
-Route::get('/test', function () {
-    try {
-        $apartments = \App\Models\Apartment::count();
-        return "Apartments in DB: $apartments - OK";
-    } catch (\Exception $e) {
-        return "Error: " . $e->getMessage();
-    }
-});
-
-// Show apartments on the home page for all environments
-Route::get('/', [ApartmentController::class, 'index'])->name('home');
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
 Route::get('/apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
 
