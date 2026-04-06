@@ -10,19 +10,14 @@ Route::get('/up', function () {
     return response('OK', 200);
 });
 
-// Diagnostic endpoint - no database
+// Diagnostic endpoint - NO database
 Route::get('/health', function () {
     return "APP is running. PHP Version: " . phpversion() . ", Time: " . date('Y-m-d H:i:s');
 });
 
-// Simple test - just return text, no views
+// Very simple home route - no database, no views
 Route::get('/', function () {
-    try {
-        $count = \App\Models\Apartment::count();
-        return "Welcome to Apartment Booking System! We have $count apartments available.";
-    } catch (\Exception $e) {
-        return "Error: " . $e->getMessage() . "\n\nFull trace:\n" . $e->getTraceAsString();
-    }
+    return "Welcome to Apartment Booking System!";
 });
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
 Route::get('/apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
