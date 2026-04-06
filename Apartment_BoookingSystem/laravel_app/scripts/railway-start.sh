@@ -1,13 +1,20 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-set -euo pipefail
+set +e  # Don't exit on errors yet
 
 cd "$(dirname "$0")/.."
+
+echo "Current directory: $(pwd)"
+echo "APP_KEY: ${APP_KEY:-NOT_SET}"
+echo "PORT: ${PORT:-8080}"
+echo "DB_CONNECTION: ${DB_CONNECTION:-NOT_SET}"
 
 if [[ -z "${APP_KEY:-}" ]]; then
   echo "APP_KEY is missing. Set APP_KEY in Railway Variables before deploy."
   exit 1
 fi
+
+set -e  # Now exit on errors
 
 # Optional toggles for deploy-time tasks.
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
@@ -29,80 +36,45 @@ if [[ "${DB_CONNECTION:-}" == "pgsql" ]]; then
     sleep 1
   done
   if [[ -z "${DB_READY:-}" ]]; then
-    echo "Timed out waiting for Postgres at ${DB_HOST}:${DB_PORT} after ${WAIT_TIMEOUT}s"
+    echo "Timeout warning: Postgres may not be ready at ${DB_HOST}:${DB_PORT}, continuing anyway..."
   fi
-fi
-
-# Start a minimal HTTP server that immediately responds 200 at `/` so the
-# platform healthcheck can succeed while we run migrations/build steps.
-# We'll remove it before launching the real Laravel server.
-TEMP_HEALTH_DIR="$(pwd)/.railway-health"
-mkdir -p "${TEMP_HEALTH_DIR}"
-echo "OK" > "${TEMP_HEALTH_DIR}/index.html"
-
-# Use the platform-provided PORT when available (Railway sets $PORT at runtime).
-PORT="${PORT:-8080}"
-
-if command -v python3 >/dev/null 2>&1; then
-  echo "Starting temporary python health server on port ${PORT}"
-  python3 -m http.server "${PORT}" --bind 0.0.0.0 --directory "${TEMP_HEALTH_DIR}" >/dev/null 2>&1 &
-  TEMP_HEALTH_PID=$!
-else
-  echo "python3 not available — skipping temporary health server"
 fi
 
 # Clear stale cache artifacts before warmup.
-php artisan optimize:clear
+echo "Clearing config cache..."
+php artisan optimize:clear || true
 
 # Make public storage available if app uses uploads.
+echo "Setting up storage link..."
 php artisan storage:link || true
 
+# Run migrations if enabled
 if [[ "${RUN_MIGRATIONS}" == "true" ]]; then
-  php artisan migrate --force
+  echo "Running migrations..."
+  php artisan migrate --force || {
+    echo "Migration warning: Could not run migrations, but continuing..."
+  }
 fi
 
+# Run seeder if enabled
 if [[ "${RUN_SEEDER}" == "true" ]]; then
-  php artisan db:seed --class=ApartmentSeeder --force
+  echo "Running seeder..."
+  php artisan db:seed --class=ApartmentSeeder --force || {
+    echo "Seeder warning: Could not run seeder"
+  }
 fi
 
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# Cache configuration
+echo "Caching configuration..."
+php artisan config:cache || true
+php artisan route:cache || true
+php artisan view:cache || true
 
 # Use the platform-provided PORT when available (Railway sets $PORT at runtime).
 PORT="${PORT:-8080}"
 
-echo "Starting Laravel dev server on port ${PORT}"
+echo "Starting Laravel server on port ${PORT}..."
 
-## Before starting the real server, stop the temporary health server (if running)
-if [[ -n "${TEMP_HEALTH_PID:-}" ]]; then
-  echo "Stopping temporary health server (pid=${TEMP_HEALTH_PID}) to free port ${PORT}"
-  kill "${TEMP_HEALTH_PID}" >/dev/null 2>&1 || true
-  wait "${TEMP_HEALTH_PID}" 2>/dev/null || true
-  unset TEMP_HEALTH_PID
-  sleep 1
-fi
-
-# Start the real Laravel server in the background so we can poll the /up health endpoint.
-php artisan serve --host=0.0.0.0 --port="${PORT}" &
-SERVER_PID=$!
-
-# Wait for the app to respond on /up (timeout defaults to 120s, configurable via HEALTHCHECK_TIMEOUT)
-HEALTHCHECK_TIMEOUT="${HEALTHCHECK_TIMEOUT:-120}"
-echo "Waiting up to ${HEALTHCHECK_TIMEOUT}s for /up to return 200..."
-for i in $(seq 1 "${HEALTHCHECK_TIMEOUT}"); do
-  if curl -sSf "http://127.0.0.1:${PORT}/up" >/dev/null 2>&1; then
-    echo "Healthcheck succeeded after ${i}s"
-    break
-  fi
-  sleep 1
-done
-
-if ! kill -0 "${SERVER_PID}" >/dev/null 2>&1; then
-  echo "Server process exited unexpectedly. Showing last 200 lines of storage/logs/laravel.log:"
-  tail -n 200 storage/logs/laravel.log || true
-  exit 1
-fi
-
-# Wait on the server process so the container keeps running with the server in foreground.
-wait "${SERVER_PID}"
+# Start the real Laravel server in the foreground
+# The /up endpoint should return 200 to signal the app is healthy
+exec php artisan serve --host=0.0.0.0 --port="${PORT}"

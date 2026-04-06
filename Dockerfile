@@ -37,6 +37,10 @@ COPY Apartment_BoookingSystem/laravel_app /app
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts || true
 RUN npm ci --silent && npm run build --silent || true
 
+# Ensure storage directory is writable for SQLite database and logs
+RUN mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
+    && chmod -R 777 storage bootstrap/cache public
+
 # Ensure start script is executable
 RUN chmod +x /app/scripts/railway-start.sh || true
 
