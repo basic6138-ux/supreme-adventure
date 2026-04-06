@@ -4,13 +4,16 @@ set +e  # Don't exit on errors yet
 
 cd "$(dirname "$0")/.."
 
+echo "======= DEPLOYMENT START ======="
 echo "Current directory: $(pwd)"
 echo "APP_KEY: ${APP_KEY:-NOT_SET}"
 echo "PORT: ${PORT:-8080}"
 echo "DB_CONNECTION: ${DB_CONNECTION:-NOT_SET}"
+echo "APP_ENV: ${APP_ENV:-NOT_SET}"
+echo "APP_DEBUG: ${APP_DEBUG:-NOT_SET}"
 
 if [[ -z "${APP_KEY:-}" ]]; then
-  echo "APP_KEY is missing. Set APP_KEY in Railway Variables before deploy."
+  echo "ERROR: APP_KEY is missing. Set APP_KEY in Railway Variables before deploy."
   exit 1
 fi
 
@@ -42,35 +45,36 @@ fi
 
 # Clear stale cache artifacts before warmup.
 echo "Clearing config cache..."
-php artisan optimize:clear || true
+php artisan optimize:clear 2>&1 || echo "⚠ optimize:clear had issues (may be OK on fresh install)"
 
 # Make public storage available if app uses uploads.
 echo "Setting up storage link..."
-php artisan storage:link || true
+php artisan storage:link 2>&1 || echo "⚠ storage:link had issues (may already exist)"
 
 # Run migrations if enabled
 if [[ "${RUN_MIGRATIONS}" == "true" ]]; then
-  echo "Running migrations..."
-  if php artisan migrate --force; then
+  echo "======= RUNNING MIGRATIONS ======="
+  if php artisan migrate --force 2>&1; then
     echo "✓ Migrations completed successfully"
   else
-    echo "⚠ Migration completed with status (may be OK if no pending migrations)"
+    MIGRATION_EXIT_CODE=$?
+    echo "⚠ Migration exit code: $MIGRATION_EXIT_CODE (checking if app can still start)"
   fi
 fi
 
 # Run seeder if enabled
 if [[ "${RUN_SEEDER}" == "true" ]]; then
   echo "Running seeder..."
-  php artisan db:seed --class=ApartmentSeeder --force || {
-    echo "Seeder warning: Could not run seeder"
+  php artisan db:seed --class=ApartmentSeeder --force 2>&1 || {
+    echo "⚠ Seeder warning: Could not run seeder"
   }
 fi
 
 # Cache configuration
 echo "Caching configuration..."
-php artisan config:cache || true
-php artisan route:cache || true
-php artisan view:cache || true
+php artisan config:cache 2>&1 || echo "⚠ config:cache had issues"
+php artisan route:cache 2>&1 || echo "⚠ route:cache had issues"
+php artisan view:cache 2>&1 || echo "⚠ view:cache had issues"
 
 # Use the platform-provided PORT when available (Railway sets $PORT at runtime).
 PORT="${PORT:-8080}"
@@ -81,11 +85,11 @@ if [[ "${DB_CONNECTION:-}" == "sqlite" ]]; then
   mkdir -p "$(dirname "$DB_DATABASE")"
   touch "$DB_DATABASE"
   chmod 666 "$DB_DATABASE"
-  echo "SQLite database ensured at $DB_DATABASE"
+  echo "✓ SQLite database ensured at $DB_DATABASE"
 fi
 
-echo "Starting Laravel server on port ${PORT}..."
-echo "Listening on all interfaces (0.0.0.0:${PORT})"
+echo "======= STARTING SERVER ======="
+echo "Starting Laravel server on 0.0.0.0:${PORT}"
 
 # Start Laravel using artisan serve
 exec php artisan serve --host=0.0.0.0 --port="${PORT}" 2>&1
