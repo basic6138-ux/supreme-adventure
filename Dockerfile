@@ -41,6 +41,11 @@ RUN npm ci --silent && npm run build --silent || true
 RUN mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
     && chmod -R 777 storage bootstrap/cache public
 
+# Clear any cached routes/config/views from the build artifacts
+RUN php artisan route:clear 2>/dev/null || true && \
+    php artisan config:clear 2>/dev/null || true && \
+    php artisan view:clear 2>/dev/null || true
+
 # Ensure start script is executable
 RUN chmod +x /app/scripts/railway-start.sh || true
 
