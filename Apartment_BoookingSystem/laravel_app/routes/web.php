@@ -10,35 +10,24 @@ Route::get('/up', function () {
     return response('OK', 200);
 });
 
-// Diagnostic endpoint - NO database
-Route::get('/health', function () {
-    return "APP is running. PHP Version: " . phpversion() . ", Time: " . date('Y-m-d H:i:s');
-});
-
-// Very simple home route - no database, no views
-Route::get('/', function () {
-    return "Welcome to Apartment Booking System!";
-});
+// Home page - show apartments
+Route::get('/', [ApartmentController::class, 'index'])->name('home');
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
 Route::get('/apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
 
-// Simple dashboard for authenticated users (named `dashboard` expected by auth flows)
+// Dashboard
 Route::middleware(['auth'])->get('/dashboard', function () {
     $apartmentsCount = \App\Models\Apartment::count();
     $bookingsCount = auth()->user()->bookings()->count();
-
-    // recent items for dashboard
     $recentBookings = auth()->user()->bookings()->with('apartment')->latest()->take(5)->get();
     $recentApartments = \App\Models\Apartment::latest()->take(5)->get();
-
     return view('dashboard', compact('apartmentsCount','bookingsCount','recentBookings','recentApartments'));
 })->name('dashboard');
 
-// Quick guest login route for testing/demo — logs in the seeded student or creates a guest user.
+// Guest login
 Route::get('/guest-login', function () {
     $email = 'student@example.com';
     $user = \App\Models\User::where('email', $email)->first();
-
     if (! $user) {
         $user = \App\Models\User::create([
             'name' => 'Guest Student',
@@ -46,13 +35,11 @@ Route::get('/guest-login', function () {
             'password' => \Illuminate\Support\Facades\Hash::make('password'),
         ]);
     }
-
     \Illuminate\Support\Facades\Auth::login($user);
-
     return redirect()->route('dashboard');
 });
 
-// Auth routes (Laravel Breeze recommended to install)
+// Auth routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::get('/apartments/{apartment}/book', [BookingController::class, 'create'])->name('bookings.create');
@@ -66,8 +53,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::resource('apartments', AdminController::class)->only(['index','create','store','edit','update','destroy']);
 });
 
-// Include auth routes provided by Breeze or other auth scaffolding
-// TEMPORARILY DISABLED FOR DEBUGGING
-// if (file_exists(__DIR__.'/auth.php')) {
-//     require __DIR__.'/auth.php';
-// }
+// Include auth routes - re-enabled
+if (file_exists(__DIR__.'/auth.php')) {
+    require __DIR__.'/auth.php';
+}
