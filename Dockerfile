@@ -33,6 +33,13 @@ WORKDIR /app
 # Copy the Laravel application into the image
 COPY Apartment_BoookingSystem/laravel_app /app
 
+# Create .env file from .env.example to ensure correct database config
+RUN cp .env.example .env && \
+    sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env && \
+    echo "" >> .env && \
+    echo "# Force SQLite for Railway" >> .env && \
+    echo "DB_CONNECTION=sqlite" >> .env
+
 # Install PHP dependencies and build frontend
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts || true
 RUN npm ci --silent && npm run build --silent || true
