@@ -10,8 +10,15 @@ class ApartmentController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Apartment::query()->where('status', 'available');
+            // Start with a simple query
+            $query = Apartment::query();
+            
+            // Only apply status filter if apartments exist
+            if (Apartment::count() > 0) {
+                $query->where('status', 'available');
+            }
 
+            // Apply search filters
             if ($request->filled('q')) {
                 $query->where(function ($q) use ($request) {
                     $q->where('name', 'like', '%'.$request->q.'%')
@@ -29,15 +36,17 @@ class ApartmentController extends Controller
 
             $apartments = $query->paginate(9)->withQueryString();
             return view('apartments.index', compact('apartments'));
-        } catch (\Exception $e) {
-            \Log::error('ApartmentController@index error: ' . $e->getMessage(), [
-                'exception' => $e,
-                'trace' => $e->getTraceAsString()
+            
+        } catch (\Throwable $e) {
+            \Log::error('ApartmentController@index error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
             
-            // If database fails, show empty list with error message
+            // Return a safe fallback view
             return view('apartments.index', ['apartments' => collect([])->paginate(0)])
-                ->with('error', 'Could not load apartments. Please try again later.');
+                ->with('error', 'Error loading apartments: ' . $e->getMessage());
         }
     }
 

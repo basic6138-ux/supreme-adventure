@@ -1,8 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
+    @if($error ?? false)
+        <div class="mb-4 p-4 bg-red-100 text-red-800 rounded">
+            <strong>Error:</strong> {{ $error }}
+        </div>
+    @endif
+
     <div class="mb-6">
-        <form method="GET" action="{{ route('apartments.index') }}" class="flex gap-2">
+        <form method="GET" action="{{ route('apartments.index') }}" class="flex gap-2 flex-wrap">
             <input name="q" value="{{ request('q') }}" placeholder="Search" class="border rounded px-2 py-1" />
             <input name="min_price" value="{{ request('min_price') }}" placeholder="Min price" class="border rounded px-2 py-1 w-24" />
             <input name="max_price" value="{{ request('max_price') }}" placeholder="Max price" class="border rounded px-2 py-1 w-24" />
@@ -10,35 +16,41 @@
         </form>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach($apartments as $apartment)
-            <div class="bg-white rounded shadow p-4">
-                @php
-                    $image = $apartment->image;
-                    $imageUrl = $image && preg_match('/^https?:\/\//i', $image)
-                        ? $image
-                        : asset($image ?: 'images/apartment-default.svg');
-                @endphp
-                <img
-                    src="{{ $imageUrl }}"
-                    alt="{{ $apartment->name }}"
-                    class="w-full h-40 object-cover rounded"
-                    onerror="this.onerror=null;this.src='{{ asset('images/apartment-default.svg') }}';"
-                />
-                <h3 class="mt-3 font-semibold text-lg">{{ $apartment->name }}</h3>
-                <p class="text-sm text-gray-600">{{ $apartment->location }}</p>
-                <p class="mt-2 font-bold">₱{{ number_format($apartment->price_per_month,2) }} / month</p>
-                <div class="mt-3 flex justify-between items-center">
-                    <a href="{{ route('apartments.show', $apartment) }}" class="text-sm text-blue-600">View</a>
-                    @auth
-                        <a href="{{ route('bookings.create', $apartment) }}" class="text-sm bg-green-600 text-white px-3 py-1 rounded">Book</a>
-                    @else
-                        <a href="/login" class="text-sm bg-green-600 text-white px-3 py-1 rounded">Login to Book</a>
-                    @endauth
+    @if($apartments && $apartments->count())
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($apartments as $apartment)
+                <div class="bg-white rounded shadow p-4">
+                    @php
+                        $image = $apartment->image;
+                        $imageUrl = $image && preg_match('/^https?:\/\//i', $image)
+                            ? $image
+                            : asset($image ?: 'images/apartment-default.svg');
+                    @endphp
+                    <img
+                        src="{{ $imageUrl }}"
+                        alt="{{ $apartment->name }}"
+                        class="w-full h-40 object-cover rounded"
+                        onerror="this.onerror=null;this.src='{{ asset('images/apartment-default.svg') }}';"
+                    />
+                    <h3 class="mt-3 font-semibold text-lg">{{ $apartment->name }}</h3>
+                    <p class="text-sm text-gray-600">{{ $apartment->location }}</p>
+                    <p class="mt-2 font-bold">₱{{ number_format($apartment->price_per_month,2) }} / month</p>
+                    <div class="mt-3 flex justify-between items-center">
+                        <a href="{{ route('apartments.show', $apartment) }}" class="text-sm text-blue-600">View</a>
+                        @auth
+                            <a href="{{ route('bookings.create', $apartment) }}" class="text-sm bg-green-600 text-white px-3 py-1 rounded">Book</a>
+                        @else
+                            <a href="/login" class="text-sm bg-green-600 text-white px-3 py-1 rounded">Login to Book</a>
+                        @endauth
+                    </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
+            @endforeach
+        </div>
 
-    <div class="mt-6">{{ $apartments->links() }}</div>
+        <div class="mt-6">{{ $apartments->links() }}</div>
+    @else
+        <div class="text-center py-12">
+            <p class="text-gray-600">No apartments available at this time.</p>
+        </div>
+    @endif
 @endsection
