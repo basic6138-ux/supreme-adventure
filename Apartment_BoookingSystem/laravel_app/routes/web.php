@@ -10,6 +10,25 @@ Route::get('/up', function () {
     return response('OK', 200);
 });
 
+// Debug endpoint to check database connection
+Route::get('/api/debug/apartments', function () {
+    try {
+        $count = \App\Models\Apartment::count();
+        $apartments = \App\Models\Apartment::limit(5)->get();
+        return response()->json([
+            'status' => 'ok',
+            'total_count' => $count,
+            'sample_apartments' => $apartments,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});
+
 // Show apartments on the home page for all environments
 Route::get('/', [ApartmentController::class, 'index'])->name('home');
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
