@@ -98,9 +98,8 @@ fi
 # Cache configuration
 echo "Caching configuration..."
 php artisan config:cache 2>&1 || echo "⚠ config:cache had issues"
-# Clear and rebuild route cache to pick up new routes
-php artisan route:clear 2>&1 || true
-php artisan route:cache 2>&1 || echo "⚠ route:cache had issues"
+# Skip route caching - it can cause stale routes in production
+echo "Skipping route cache to avoid stale routes"
 php artisan view:cache 2>&1 || echo "⚠ view:cache had issues"
 
 # Use the platform-provided PORT when available (Railway sets $PORT at runtime).
