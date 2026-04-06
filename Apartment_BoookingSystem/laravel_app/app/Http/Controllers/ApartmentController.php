@@ -9,26 +9,36 @@ class ApartmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Apartment::query()->where('status', 'available');
+        try {
+            $query = Apartment::query()->where('status', 'available');
 
-        if ($request->filled('q')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%'.$request->q.'%')
-                  ->orWhere('location', 'like', '%'.$request->q.'%');
-            });
+            if ($request->filled('q')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('name', 'like', '%'.$request->q.'%')
+                      ->orWhere('location', 'like', '%'.$request->q.'%');
+                });
+            }
+
+            if ($request->filled('min_price')) {
+                $query->where('price_per_month', '>=', $request->min_price);
+            }
+
+            if ($request->filled('max_price')) {
+                $query->where('price_per_month', '<=', $request->max_price);
+            }
+
+            $apartments = $query->paginate(9)->withQueryString();
+            return view('apartments.index', compact('apartments'));
+        } catch (\Exception $e) {
+            \Log::error('ApartmentController@index error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // If database fails, show empty list with error message
+            return view('apartments.index', ['apartments' => collect([])->paginate(0)])
+                ->with('error', 'Could not load apartments. Please try again later.');
         }
-
-        if ($request->filled('min_price')) {
-            $query->where('price_per_month', '>=', $request->min_price);
-        }
-
-        if ($request->filled('max_price')) {
-            $query->where('price_per_month', '<=', $request->max_price);
-        }
-
-        $apartments = $query->paginate(9)->withQueryString();
-
-        return view('apartments.index', compact('apartments'));
     }
 
     public function show(Apartment $apartment)
