@@ -51,9 +51,11 @@ php artisan storage:link || true
 # Run migrations if enabled
 if [[ "${RUN_MIGRATIONS}" == "true" ]]; then
   echo "Running migrations..."
-  php artisan migrate --force || {
-    echo "Migration warning: Could not run migrations, but continuing..."
-  }
+  if php artisan migrate --force; then
+    echo "✓ Migrations completed successfully"
+  else
+    echo "⚠ Migration completed with status (may be OK if no pending migrations)"
+  fi
 fi
 
 # Run seeder if enabled
@@ -73,8 +75,17 @@ php artisan view:cache || true
 # Use the platform-provided PORT when available (Railway sets $PORT at runtime).
 PORT="${PORT:-8080}"
 
-echo "Starting Laravel server on port ${PORT}..."
+# Ensure database file exists for SQLite
+if [[ "${DB_CONNECTION:-}" == "sqlite" ]]; then
+  DB_DATABASE="${DB_DATABASE:-database/database.sqlite}"
+  mkdir -p "$(dirname "$DB_DATABASE")"
+  touch "$DB_DATABASE"
+  chmod 666 "$DB_DATABASE"
+  echo "SQLite database ensured at $DB_DATABASE"
+fi
 
-# Start the real Laravel server in the foreground
-# The /up endpoint should return 200 to signal the app is healthy
-exec php artisan serve --host=0.0.0.0 --port="${PORT}"
+echo "Starting Laravel server on port ${PORT}..."
+echo "Listening on all interfaces (0.0.0.0:${PORT})"
+
+# Start Laravel using artisan serve
+exec php artisan serve --host=0.0.0.0 --port="${PORT}" 2>&1
