@@ -19,6 +19,17 @@ export SESSION_DRIVER="${SESSION_DRIVER:-file}"
 export CACHE_STORE="${CACHE_STORE:-file}"
 echo "Session and cache drivers set to: ${SESSION_DRIVER} / ${CACHE_STORE}"
 
+# Configure SQLite database if using SQLite
+if [[ "${DB_CONNECTION:-}" == "sqlite" ]] || [[ -z "${DB_CONNECTION:-}" ]]; then
+  DB_DATABASE="${DB_DATABASE:-database/database.sqlite}"
+  export DB_DATABASE
+  echo "Using SQLite database at: $DB_DATABASE"
+  mkdir -p "$(dirname "$DB_DATABASE")"
+  touch "$DB_DATABASE"
+  chmod 666 "$DB_DATABASE"
+  echo "✓ SQLite database file ensured and writable"
+fi
+
 if [[ -z "${APP_KEY:-}" ]]; then
   echo "ERROR: APP_KEY is missing. Set APP_KEY in Railway Variables before deploy."
   exit 1
@@ -69,12 +80,11 @@ if [[ "${RUN_MIGRATIONS}" == "true" ]]; then
   fi
 fi
 
-# Run seeder if enabled
-if [[ "${RUN_SEEDER}" == "true" ]]; then
-  echo "Running seeder..."
-  php artisan db:seed --class=ApartmentSeeder --force 2>&1 || {
-    echo "⚠ Seeder warning: Could not run seeder"
-  }
+# Run seeder if enabled (enable by default for fresh installs)
+if [[ "${RUN_SEEDER:-}" != "false" ]]; then
+  echo "Running seeders..."
+  php artisan db:seed --class=ApartmentSeeder --force 2>&1 || echo "⚠ ApartmentSeeder already run or had issues"
+  php artisan db:seed --force 2>&1 || echo "⚠ DatabaseSeeder had issues"
 fi
 
 # Cache configuration
@@ -85,15 +95,6 @@ php artisan view:cache 2>&1 || echo "⚠ view:cache had issues"
 
 # Use the platform-provided PORT when available (Railway sets $PORT at runtime).
 PORT="${PORT:-8080}"
-
-# Ensure database file exists for SQLite
-if [[ "${DB_CONNECTION:-}" == "sqlite" ]]; then
-  DB_DATABASE="${DB_DATABASE:-database/database.sqlite}"
-  mkdir -p "$(dirname "$DB_DATABASE")"
-  touch "$DB_DATABASE"
-  chmod 666 "$DB_DATABASE"
-  echo "✓ SQLite database ensured at $DB_DATABASE"
-fi
 
 echo "======= STARTING SERVER ======="
 echo "Starting Laravel server on 0.0.0.0:${PORT}"
