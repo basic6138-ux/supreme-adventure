@@ -14,21 +14,21 @@ echo "APP_DEBUG: ${APP_DEBUG:-NOT_SET}"
 echo "SESSION_DRIVER: ${SESSION_DRIVER:-NOT_SET}"
 echo "CACHE_STORE: ${CACHE_STORE:-NOT_SET}"
 
+# Force SQLite database connection for this app (override any Railway environment defaults)
+export DB_CONNECTION=sqlite
+export DB_DATABASE="${DB_DATABASE:-database/database.sqlite}"
+echo "✓ Database connection forced to SQLite at: ${DB_DATABASE}"
+
 # Set safe defaults for session and cache to avoid database dependency
 export SESSION_DRIVER="${SESSION_DRIVER:-file}"
 export CACHE_STORE="${CACHE_STORE:-file}"
 echo "Session and cache drivers set to: ${SESSION_DRIVER} / ${CACHE_STORE}"
 
-# Configure SQLite database if using SQLite
-if [[ "${DB_CONNECTION:-}" == "sqlite" ]] || [[ -z "${DB_CONNECTION:-}" ]]; then
-  DB_DATABASE="${DB_DATABASE:-database/database.sqlite}"
-  export DB_DATABASE
-  echo "Using SQLite database at: $DB_DATABASE"
-  mkdir -p "$(dirname "$DB_DATABASE")"
-  touch "$DB_DATABASE"
-  chmod 666 "$DB_DATABASE"
-  echo "✓ SQLite database file ensured and writable"
-fi
+# Configure SQLite database - ensure file exists and is writable
+mkdir -p "$(dirname "$DB_DATABASE")"
+touch "$DB_DATABASE"
+chmod 666 "$DB_DATABASE"
+echo "✓ SQLite database file ensured and writable"
 
 if [[ -z "${APP_KEY:-}" ]]; then
   echo "ERROR: APP_KEY is missing. Set APP_KEY in Railway Variables before deploy."
@@ -41,25 +41,8 @@ set -e  # Now exit on errors
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 RUN_SEEDER="${RUN_SEEDER:-false}"
 
-# If using PostgreSQL, wait for the DB host/port to be reachable before running
-# any Artisan commands that may touch the database (cache clearing, migrations).
-if [[ "${DB_CONNECTION:-}" == "pgsql" ]]; then
-  DB_HOST="${DB_HOST:-127.0.0.1}"
-  DB_PORT="${DB_PORT:-5432}"
-  WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-60}"
-  echo "DB_CONNECTION=pgsql detected; waiting up to ${WAIT_TIMEOUT}s for ${DB_HOST}:${DB_PORT}..."
-  for i in $(seq 1 "${WAIT_TIMEOUT}"); do
-    if (echo > /dev/tcp/${DB_HOST}/${DB_PORT}) >/dev/null 2>&1; then
-      echo "Postgres is reachable at ${DB_HOST}:${DB_PORT} (after ${i}s)"
-      DB_READY=1
-      break
-    fi
-    sleep 1
-  done
-  if [[ -z "${DB_READY:-}" ]]; then
-    echo "Timeout warning: Postgres may not be ready at ${DB_HOST}:${DB_PORT}, continuing anyway..."
-  fi
-fi
+# Skip PostgreSQL waiting - we're using SQLite
+echo "SQLite will be initialized locally"
 
 # Clear stale cache artifacts before warmup.
 echo "Clearing config cache..."

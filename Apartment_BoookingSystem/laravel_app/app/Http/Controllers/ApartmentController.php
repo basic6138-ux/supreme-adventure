@@ -13,9 +13,14 @@ class ApartmentController extends Controller
             // Start with a simple query
             $query = Apartment::query();
             
-            // Only apply status filter if apartments exist
-            if (Apartment::count() > 0) {
-                $query->where('status', 'available');
+            // Only apply status filter if we can successfully count (handles DB init)
+            try {
+                if (Apartment::count() > 0) {
+                    $query->where('status', 'available');
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Could not check apartment count: ' . $e->getMessage());
+                // Continue without the status filter
             }
 
             // Apply search filters
