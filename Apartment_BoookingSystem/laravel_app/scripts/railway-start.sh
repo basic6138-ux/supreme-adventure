@@ -11,6 +11,13 @@ echo "PORT: ${PORT:-8080}"
 echo "DB_CONNECTION: ${DB_CONNECTION:-NOT_SET}"
 echo "APP_ENV: ${APP_ENV:-NOT_SET}"
 echo "APP_DEBUG: ${APP_DEBUG:-NOT_SET}"
+echo "SESSION_DRIVER: ${SESSION_DRIVER:-NOT_SET}"
+echo "CACHE_STORE: ${CACHE_STORE:-NOT_SET}"
+
+# Set safe defaults for session and cache to avoid database dependency
+export SESSION_DRIVER="${SESSION_DRIVER:-file}"
+export CACHE_STORE="${CACHE_STORE:-file}"
+echo "Session and cache drivers set to: ${SESSION_DRIVER} / ${CACHE_STORE}"
 
 if [[ -z "${APP_KEY:-}" ]]; then
   echo "ERROR: APP_KEY is missing. Set APP_KEY in Railway Variables before deploy."
