@@ -72,19 +72,27 @@ php artisan storage:link 2>&1 || echo "⚠ storage:link had issues (may already 
 # Run migrations if enabled
 if [[ "${RUN_MIGRATIONS}" == "true" ]]; then
   echo "======= RUNNING MIGRATIONS ======="
+  # First check if database is fresh or has migrations
+  MIGRATION_COUNT=$(php artisan migrate:status 2>&1 | grep -c "^.*\|" || echo "0")
+  
   if php artisan migrate --force 2>&1; then
     echo "✓ Migrations completed successfully"
   else
     MIGRATION_EXIT_CODE=$?
     echo "⚠ Migration exit code: $MIGRATION_EXIT_CODE (checking if app can still start)"
   fi
+  
+  # Verify apartments table has data
+  APARTMENT_COUNT=$(php artisan tinker --execute="echo \App\Models\Apartment::count();" 2>/dev/null | tail -1 || echo "0")
+  echo "Apartments in database: $APARTMENT_COUNT"
 fi
 
-# Run seeder if enabled (enable by default for fresh installs)
-if [[ "${RUN_SEEDER:-}" != "false" ]]; then
-  echo "Running seeders..."
+# Run seeder if enabled (enable by default for fresh installs)  
+if [[ "${RUN_SEEDER:-}" != "false" ]] || [[ "$APARTMENT_COUNT" == "0" ]]; then
+  echo "Running seeders to populate data..."
   php artisan db:seed --class=ApartmentSeeder --force 2>&1 || echo "⚠ ApartmentSeeder already run or had issues"
   php artisan db:seed --force 2>&1 || echo "⚠ DatabaseSeeder had issues"
+  echo "✓ Seeders completed"
 fi
 
 # Cache configuration
