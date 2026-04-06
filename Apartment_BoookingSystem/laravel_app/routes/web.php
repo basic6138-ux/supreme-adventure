@@ -5,21 +5,13 @@ use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AdminController;
 
-// Lightweight health endpoint used by deploy healthchecks
+// Lightweight health endpoint used by deploy healthchecks (used by Railway)
 Route::get('/up', function () {
     return response('OK', 200);
 });
 
-// When deployed on Railway, return a lightweight 200 at `/` so external
-// health probes that hit `/` succeed quickly. On local/dev environments
-// the regular controller will render the apartments index.
-if (env('RAILWAY_ENVIRONMENT_NAME')) {
-    Route::get('/', function () {
-        return response('OK', 200);
-    })->name('home');
-} else {
-    Route::get('/', [ApartmentController::class, 'index'])->name('home');
-}
+// Show apartments on the home page for all environments
+Route::get('/', [ApartmentController::class, 'index'])->name('home');
 Route::get('/apartments', [ApartmentController::class, 'index'])->name('apartments.index');
 Route::get('/apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
 
